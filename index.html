@@ -17,10 +17,7 @@
       background: #0f172a;
       color: #fff;
     }
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-    }
+    h1 { margin: 0; font-size: 2rem; }
     main {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -40,23 +37,41 @@
       transform: translateY(-5px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    .repo h2 {
-      font-size: 1.2rem;
-      margin: 0 0 0.5rem;
-    }
-    .repo p {
-      font-size: 0.9rem;
-      color: #555;
-    }
+    .repo h2 { font-size: 1.2rem; margin: 0 0 0.5rem; }
+    .repo p { font-size: 0.9rem; color: #555; }
     .repo a {
       display: inline-block;
       margin-top: 0.5rem;
       color: #2563eb;
       text-decoration: none;
       font-weight: 600;
+      cursor: pointer;
     }
-    .repo a:hover {
-      text-decoration: underline;
+    .repo a:hover { text-decoration: underline; }
+    #iframe-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #fff;
+      z-index: 9999;
+      flex-direction: column;
+      opacity: 0;
+    }
+    #iframe-container iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+    }
+    #close-btn {
+      padding: 0.5rem 1rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      align-self: flex-start;
+      margin: 1rem;
+      border-radius: 6px;
     }
     footer {
       text-align: center;
@@ -65,6 +80,8 @@
       font-size: 0.9rem;
     }
   </style>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
 </head>
 <body>
   <header>
@@ -72,9 +89,14 @@
     <p>Explore all my open-source projects</p>
   </header>
 
-  <main id="repo-container">
+  <main id="repo-container" data-barba="container" data-barba-namespace="home">
     <p style="text-align:center;">Loading repositories...</p>
   </main>
+
+  <div id="iframe-container">
+    <button id="close-btn">Close</button>
+    <iframe src=""></iframe>
+  </div>
 
   <footer>
     © <span id="year"></span> Samiran | 
@@ -82,22 +104,48 @@
   </footer>
 
   <script>
-    const username = "samiranDev"; // your GitHub username
-    const container = document.getElementById("repo-container");
+    document.getElementById("year").textContent = new Date().getFullYear();
 
+    const username = "samiranDev";
+    const container = document.getElementById("repo-container");
+    const iframeContainer = document.getElementById("iframe-container");
+    const iframe = iframeContainer.querySelector("iframe");
+    const closeBtn = document.getElementById("close-btn");
+
+    // Fetch GitHub repos
     fetch(`https://api.github.com/users/${username}/repos?sort=updated`)
       .then(res => res.json())
       .then(repos => {
         container.innerHTML = "";
+        const currentUrl = window.location.href; // current page URL
+
         repos.forEach(repo => {
-          const pageUrl = `https://${username}.github.io/${repo.name}`;
+          const pageUrl = `https://${username}.github.io/${repo.name}/`;
+
+          // Skip the 'tools' repo specifically
+          if (repo.name.toLowerCase() === "tools") return;
+
           const div = document.createElement("div");
           div.className = "repo";
           div.innerHTML = `
             <h2>${repo.name}</h2>
             <p>${repo.description ? repo.description : "No description available."}</p>
-            <a href="${pageUrl}" target="_blank">🌐 Open Tool</a>
+            <a href="${pageUrl}" target="_blank" class="open-tool-btn">🌐 Open Tool</a>
           `;
+
+          const btn = div.querySelector(".open-tool-btn");
+
+          // Prefetch iframe content
+          const prefetchLink = document.createElement("link");
+          prefetchLink.rel = "prefetch";
+          prefetchLink.href = pageUrl;
+          document.head.appendChild(prefetchLink);
+
+          btn.addEventListener("click", e => {
+            e.preventDefault();
+            openTool(pageUrl, div);
+          });
+
           container.appendChild(div);
         });
       })
@@ -106,7 +154,39 @@
         console.error(err);
       });
 
-    document.getElementById("year").textContent = new Date().getFullYear();
+    // Open tool in iframe with smooth fade using GSAP
+    function openTool(url, repoDiv) {
+      iframe.src = url;
+      iframeContainer.style.display = "flex";
+      gsap.fromTo(iframeContainer, {opacity: 0}, {opacity: 1, duration: 0.5});
+      
+      // Hide the repo while iframe is open
+      if (repoDiv) repoDiv.style.display = "none";
+    }
+
+    closeBtn.addEventListener("click", () => {
+      gsap.to(iframeContainer, {opacity: 0, duration: 0.3, onComplete: () => {
+        iframeContainer.style.display = "none";
+        iframe.src = "";
+        // Show all hidden repos again when closing iframe
+        document.querySelectorAll(".repo").forEach(div => div.style.display = "block");
+      }});
+    });
+
+    // Barba.js initialization for smooth page transitions (future SPA)
+    barba.init({
+      transitions: [
+        {
+          name: 'fade',
+          leave(data) {
+            return gsap.to(data.current.container, {opacity: 0, duration: 0.3});
+          },
+          enter(data) {
+            return gsap.from(data.next.container, {opacity: 0, duration: 0.3});
+          }
+        }
+      ]
+    });
   </script>
 </body>
 </html>
