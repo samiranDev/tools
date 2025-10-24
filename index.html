@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Developer Tools | Samiran</title>
+  <title>Samiran's Developer Tools</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -48,6 +48,15 @@
       cursor: pointer;
     }
     .repo a:hover { text-decoration: underline; }
+
+    /* GitBook static card */
+    .gitbook-card {
+      border: 2px solid #facc15;
+      background: #fffbeb;
+    }
+    .gitbook-card h2 { color: #b45309; }
+    .gitbook-card a { color: #b45309; font-weight: 700; }
+
     #iframe-container {
       display: none;
       position: fixed;
@@ -73,6 +82,7 @@
       margin: 1rem;
       border-radius: 6px;
     }
+
     footer {
       text-align: center;
       padding: 1rem;
@@ -80,7 +90,6 @@
       font-size: 0.9rem;
     }
   </style>
-  <script src="https://unpkg.com/@barba/core"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
 </head>
 <body>
@@ -89,8 +98,13 @@
     <p>Explore all my open-source projects</p>
   </header>
 
-  <main id="repo-container" data-barba="container" data-barba-namespace="home">
-    <p style="text-align:center;">Loading repositories...</p>
+  <main id="repo-container">
+    <!-- Static GitBook Card -->
+    <div class="repo gitbook-card">
+      <h2>📖 My GitBook</h2>
+      <p>Read all my documentation and guides here.</p>
+      <a href="https://samirandev.gitbook.io/codespace" target="_blank">Open GitBook</a>
+    </div>
   </main>
 
   <div id="iframe-container">
@@ -112,36 +126,55 @@
     const iframe = iframeContainer.querySelector("iframe");
     const closeBtn = document.getElementById("close-btn");
 
+    function openTool(url, repoDiv) {
+      iframe.src = url;
+      iframeContainer.style.display = "flex";
+      gsap.fromTo(iframeContainer, {opacity:0}, {opacity:1, duration:0.5});
+      if(repoDiv) repoDiv.style.display = "none";
+
+      let timeout = setTimeout(() => {
+        iframeContainer.style.display = "none";
+        iframe.src = "";
+        if(repoDiv) repoDiv.style.display = "block";
+        window.open(url, "_blank");
+      }, 3000);
+
+      iframe.onload = () => clearTimeout(timeout);
+    }
+
+    closeBtn.addEventListener("click", () => {
+      gsap.to(iframeContainer, {opacity:0, duration:0.3, onComplete: ()=>{
+        iframeContainer.style.display = "none";
+        iframe.src = "";
+        document.querySelectorAll(".repo").forEach(div => div.style.display = "block");
+      }});
+    });
+
     // Fetch GitHub repos
     fetch(`https://api.github.com/users/${username}/repos?sort=updated`)
       .then(res => res.json())
       .then(repos => {
-        container.innerHTML = "";
-        const currentUrl = window.location.href; // current page URL
-
         repos.forEach(repo => {
+          if(repo.name.toLowerCase() === "tools") return;
           const pageUrl = `https://${username}.github.io/${repo.name}/`;
-
-          // Skip the 'tools' repo specifically
-          if (repo.name.toLowerCase() === "tools") return;
 
           const div = document.createElement("div");
           div.className = "repo";
           div.innerHTML = `
             <h2>${repo.name}</h2>
             <p>${repo.description ? repo.description : "No description available."}</p>
-            <a href="${pageUrl}" target="_blank" class="open-tool-btn">🌐 Open Tool</a>
+            <a href="#">🌐 Open Tool</a>
           `;
 
-          const btn = div.querySelector(".open-tool-btn");
+          const link = div.querySelector("a");
 
-          // Prefetch iframe content
+          // Automatic prefetch using <link rel="prefetch">
           const prefetchLink = document.createElement("link");
           prefetchLink.rel = "prefetch";
           prefetchLink.href = pageUrl;
           document.head.appendChild(prefetchLink);
 
-          btn.addEventListener("click", e => {
+          link.addEventListener("click", e => {
             e.preventDefault();
             openTool(pageUrl, div);
           });
@@ -150,43 +183,11 @@
         });
       })
       .catch(err => {
-        container.innerHTML = "<p>Error loading repositories.</p>";
         console.error(err);
+        const errorDiv = document.createElement("div");
+        errorDiv.textContent = "Failed to load GitHub repositories.";
+        container.appendChild(errorDiv);
       });
-
-    // Open tool in iframe with smooth fade using GSAP
-    function openTool(url, repoDiv) {
-      iframe.src = url;
-      iframeContainer.style.display = "flex";
-      gsap.fromTo(iframeContainer, {opacity: 0}, {opacity: 1, duration: 0.5});
-      
-      // Hide the repo while iframe is open
-      if (repoDiv) repoDiv.style.display = "none";
-    }
-
-    closeBtn.addEventListener("click", () => {
-      gsap.to(iframeContainer, {opacity: 0, duration: 0.3, onComplete: () => {
-        iframeContainer.style.display = "none";
-        iframe.src = "";
-        // Show all hidden repos again when closing iframe
-        document.querySelectorAll(".repo").forEach(div => div.style.display = "block");
-      }});
-    });
-
-    // Barba.js initialization for smooth page transitions (future SPA)
-    barba.init({
-      transitions: [
-        {
-          name: 'fade',
-          leave(data) {
-            return gsap.to(data.current.container, {opacity: 0, duration: 0.3});
-          },
-          enter(data) {
-            return gsap.from(data.next.container, {opacity: 0, duration: 0.3});
-          }
-        }
-      ]
-    });
   </script>
 </body>
 </html>
