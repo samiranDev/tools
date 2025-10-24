@@ -1,193 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Samiran's Developer Tools</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      background: #f5f7fa;
-      color: #222;
-    }
-    header {
-      text-align: center;
-      padding: 2rem 1rem;
-      background: #0f172a;
-      color: #fff;
-    }
-    h1 { margin: 0; font-size: 2rem; }
-    main {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: auto;
-    }
-    .repo {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 1.5rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .repo:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .repo h2 { font-size: 1.2rem; margin: 0 0 0.5rem; }
-    .repo p { font-size: 0.9rem; color: #555; }
-    .repo a {
-      display: inline-block;
-      margin-top: 0.5rem;
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .repo a:hover { text-decoration: underline; }
-
-    /* GitBook static card */
-    .gitbook-card {
-      border: 2px solid #facc15;
-      background: #fffbeb;
-    }
-    .gitbook-card h2 { color: #b45309; }
-    .gitbook-card a { color: #b45309; font-weight: 700; }
-
-    #iframe-container {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #fff;
-      z-index: 9999;
-      flex-direction: column;
-      opacity: 0;
-    }
-    #iframe-container iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-    }
-    #close-btn {
-      padding: 0.5rem 1rem;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      align-self: flex-start;
-      margin: 1rem;
-      border-radius: 6px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Samiran's Developer Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f3f4f6; color: #1f2937; }
+  header { text-align: center; padding: 2rem 1rem; background: #111827; color: #f9fafb; }
+  h1 { margin: 0; font-size: 2.25rem; font-weight: 700; }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; padding: 2rem; max-width: 1200px; margin: auto; }
+  .repo {
+    background: #fff; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden; opacity: 0; transform: translateY(20px);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .repo:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+  .repo h2 { font-size: 1.25rem; margin: 0 0 0.5rem; font-weight: 600; }
+  .repo p { font-size: 0.95rem; color: #4b5563; flex-grow: 1; }
+  .repo a { display: inline-block; margin-top: 0.75rem; color: #3b82f6; text-decoration: none; font-weight: 600; cursor: not-allowed; pointer-events: none; }
+  .repo a.enabled { cursor: pointer; pointer-events: auto; }
+  .repo a:hover.enabled { text-decoration: underline; }
+  .progress-container { height: 4px; width: 100%; background: #e5e7eb; border-radius: 4px; margin-top: 0.5rem; overflow: hidden; }
+  .progress-bar { height: 100%; width: 0%; background: #3b82f6; transition: width 0.3s ease; }
+  .gitbook-card { border: 2px solid #facc15; background: #fffbeb; grid-column: 1/-1; order: -1; }
+  .gitbook-card h2 { color: #b45309; }
+  .gitbook-card a { color: #b45309; font-weight: 700; cursor: pointer; pointer-events: auto; }
+  .lock-overlay {
+    position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.6);
+    display:flex; justify-content:center; align-items:center; font-size:1.5rem; color:#9ca3af; pointer-events:none; border-radius:16px;
+  }
+  #iframe-container { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; flex-direction:column; opacity:0; }
+  #iframe-container iframe { flex:1; width:100%; border:none; }
+  #close-btn { padding:0.5rem 1rem; background:#3b82f6; color:#fff; border:none; cursor:pointer; align-self:flex-start; margin:1rem; border-radius:6px; }
+  footer { text-align:center; padding:1rem; color:#6b7280; font-size:0.9rem; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>🧰 Samiran’s Developer Tools</h1>
-    <p>Explore all my open-source projects</p>
-  </header>
 
-  <main id="repo-container">
-    <!-- Static GitBook Card -->
-    <div class="repo gitbook-card">
-      <h2>📖 My GitBook</h2>
-      <p>Read all my documentation and guides here.</p>
-      <a href="https://samirandev.gitbook.io/codespace" target="_blank">Open GitBook</a>
-    </div>
-  </main>
+<header>
+  <h1>🧰 Samiran’s Developer Tools</h1>
+  <p>Explore all my open-source projects</p>
+</header>
 
-  <div id="iframe-container">
-    <button id="close-btn">Close</button>
-    <iframe src=""></iframe>
+<main id="repo-container">
+  <div class="repo gitbook-card">
+    <h2>📖 My GitBook</h2>
+    <p>Read all my documentation and guides here.</p>
+    <a href="https://samirandev.gitbook.io/codespace" target="_blank">Open GitBook</a>
   </div>
+</main>
 
-  <footer>
-    © <span id="year"></span> Samiran | 
-    <a href="https://github.com/samiranDev" target="_blank">GitHub</a>
-  </footer>
+<div id="iframe-container">
+  <button id="close-btn">Close</button>
+  <iframe src=""></iframe>
+</div>
 
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+<footer>
+  © <span id="year"></span> Samiran | 
+  <a href="https://github.com/samiranDev" target="_blank">GitHub</a>
+</footer>
 
-    const username = "samiranDev";
-    const container = document.getElementById("repo-container");
-    const iframeContainer = document.getElementById("iframe-container");
-    const iframe = iframeContainer.querySelector("iframe");
-    const closeBtn = document.getElementById("close-btn");
+<script>
+document.getElementById("year").textContent = new Date().getFullYear();
+const username = "samiranDev";
+const container = document.getElementById("repo-container");
+const iframeContainer = document.getElementById("iframe-container");
+const iframe = iframeContainer.querySelector("iframe");
+const closeBtn = document.getElementById("close-btn");
 
-    function openTool(url, repoDiv) {
-      iframe.src = url;
-      iframeContainer.style.display = "flex";
-      gsap.fromTo(iframeContainer, {opacity:0}, {opacity:1, duration:0.5});
-      if(repoDiv) repoDiv.style.display = "none";
+// Animate GitBook card
+gsap.to(document.querySelector(".gitbook-card"), {opacity:1, y:0, duration:0.6, ease:"power2.out"});
 
-      let timeout = setTimeout(() => {
-        iframeContainer.style.display = "none";
-        iframe.src = "";
-        if(repoDiv) repoDiv.style.display = "block";
-        window.open(url, "_blank");
-      }, 3000);
+// Iframe preview
+function openTool(url, repoDiv) {
+  iframe.src = url;
+  iframeContainer.style.display="flex";
+  gsap.fromTo(iframeContainer,{opacity:0},{opacity:1,duration:0.5});
+  if(repoDiv) repoDiv.style.display="none";
+  let timeout = setTimeout(()=>{
+    iframeContainer.style.display="none"; iframe.src="";
+    if(repoDiv) repoDiv.style.display="block";
+    window.open(url,"_blank");
+  },3000);
+  iframe.onload = ()=>clearTimeout(timeout);
+}
 
-      iframe.onload = () => clearTimeout(timeout);
-    }
+closeBtn.addEventListener("click",()=>{
+  gsap.to(iframeContainer,{opacity:0,duration:0.3,onComplete:()=>{
+    iframeContainer.style.display="none"; iframe.src="";
+    document.querySelectorAll(".repo").forEach(d=>d.style.display="block");
+  }});
+});
 
-    closeBtn.addEventListener("click", () => {
-      gsap.to(iframeContainer, {opacity:0, duration:0.3, onComplete: ()=>{
-        iframeContainer.style.display = "none";
-        iframe.src = "";
-        document.querySelectorAll(".repo").forEach(div => div.style.display = "block");
-      }});
+// Fetch GitHub repos
+fetch(`https://api.github.com/users/${username}/repos?sort=updated`)
+.then(res=>res.json())
+.then(repos=>{
+  let delay=0;
+  repos.forEach(repo=>{
+    if(repo.name.toLowerCase()==="tools") return;
+    const pageUrl=`https://${username}.github.io/${repo.name}/`;
+
+    const div=document.createElement("div");
+    div.className="repo";
+    div.innerHTML=`
+      <h2>${repo.name}</h2>
+      <p>${repo.description?repo.description:"No description available."}</p>
+      <a href="#">🌐 Open Tool</a>
+      <div class="progress-container"><div class="progress-bar"></div></div>
+    `;
+
+    const link=div.querySelector("a");
+    const progressBar=div.querySelector(".progress-bar");
+
+    // Prefetch
+    const prefetch=document.createElement("link"); prefetch.rel="prefetch"; prefetch.href=pageUrl; document.head.appendChild(prefetch);
+
+    // Lock overlay
+    const lockOverlay=document.createElement("div");
+    lockOverlay.className="lock-overlay"; lockOverlay.innerHTML="🔒";
+    div.appendChild(lockOverlay);
+
+    // Lock until prefetch completes
+    let progress=0;
+    const interval=setInterval(()=>{
+      progress+=Math.random()*10;
+      if(progress>=100){
+        progress=100;
+        clearInterval(interval);
+        link.classList.add("enabled");
+        lockOverlay.style.display="none";
+      }
+      progressBar.style.width=progress+"%";
+    },150);
+
+    link.addEventListener("click",e=>{
+      if(!link.classList.contains("enabled")) return;
+      e.preventDefault();
+      openTool(pageUrl,div);
     });
 
-    // Fetch GitHub repos
-    fetch(`https://api.github.com/users/${username}/repos?sort=updated`)
-      .then(res => res.json())
-      .then(repos => {
-        repos.forEach(repo => {
-          if(repo.name.toLowerCase() === "tools") return;
-          const pageUrl = `https://${username}.github.io/${repo.name}/`;
+    container.appendChild(div);
 
-          const div = document.createElement("div");
-          div.className = "repo";
-          div.innerHTML = `
-            <h2>${repo.name}</h2>
-            <p>${repo.description ? repo.description : "No description available."}</p>
-            <a href="#">🌐 Open Tool</a>
-          `;
+    // Animate card
+    gsap.to(div,{opacity:1,y:0,duration:0.6,delay:delay,ease:"power2.out"});
+    delay+=0.1;
+  });
+})
+.catch(err=>{
+  console.error(err);
+  const errorDiv=document.createElement("div");
+  errorDiv.textContent="Failed to load GitHub repositories.";
+  container.appendChild(errorDiv);
+});
+</script>
 
-          const link = div.querySelector("a");
-
-          // Automatic prefetch using <link rel="prefetch">
-          const prefetchLink = document.createElement("link");
-          prefetchLink.rel = "prefetch";
-          prefetchLink.href = pageUrl;
-          document.head.appendChild(prefetchLink);
-
-          link.addEventListener("click", e => {
-            e.preventDefault();
-            openTool(pageUrl, div);
-          });
-
-          container.appendChild(div);
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        const errorDiv = document.createElement("div");
-        errorDiv.textContent = "Failed to load GitHub repositories.";
-        container.appendChild(errorDiv);
-      });
-  </script>
 </body>
 </html>
